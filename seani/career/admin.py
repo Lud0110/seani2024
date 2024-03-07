@@ -2,6 +2,8 @@ from django.contrib import admin
 
 from .models import Career
 
-admin.site.register(Career)
+class CareerAdmin(admin.ModelAdmin):
+    list_display = ['short_name', 'level']
+    filter_vertical = ['level']
 
-# Register your models here.
+admin.site.register(Career)
