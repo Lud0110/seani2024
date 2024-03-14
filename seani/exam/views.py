@@ -1,21 +1,43 @@
-from django.shortcuts import render
 from django.http import HttpResponse
+from django.shortcuts import redirect, render
 from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
 
 from .forms import CandidateForm
 from .models import Exam
 
+@login_required
 def home (request):
     user = request.user
     return render(request, 'exam/home.html', {'user': user})
 
-# Create your views here.
-
+@login_required
 def question(request, m_id, q_id = 1):
-    exam = request.user.exam
-    questions= exam.breakdown_set.filter(question_module_id = m_id)
-    question = questions[q_id -1].question
-    return render(request, 'exam/question.html',{"question": question})
+        exam = request.user.exam
+
+        if request.method == 'POST':
+            questions = exam.breakdown_set.filter(question__module_id = m_id)
+            questions = questions[q_id - 1]
+            questions.answer = request.POST['answer']
+            questions.save()
+            return redirect('exam:question', m_id, q_id + 1)
+
+
+    try:
+        questions= exam.breakdown_set.filter(question__module_id = m_id)
+        question = questions[q_id -1].question
+        answer = question[q_id - 1],answer
+        return render(request, 'exam/question.html',
+                    {
+                        "question": question,
+                        "m_id": m_id,
+                        "q_id": q_id,
+                        "answer": answer,
+                        })
+    except IndexError:
+        return redirect('exam:home')
+
+@login_required    
 def add_candidate(request):
     if request.method == 'POST':
         form = CandidateForm(request.POST)
